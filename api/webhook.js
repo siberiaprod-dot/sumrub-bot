@@ -29,6 +29,15 @@ function extractOutputText(response) {
   return '';
 }
 
+function safeErrorMessage(err) {
+  const s = String(err?.message || err || 'Unknown error');
+  if (/insufficient_quota|billing|quota/i.test(s)) return 'OpenAI API: нет доступного баланса/квоты. Проверь Billing в OpenAI API.';
+  if (/invalid_api_key|incorrect api key|401/i.test(s)) return 'OpenAI API: ключ не принят. Проверь OPENAI_API_KEY в Vercel.';
+  if (/model_not_found|does not exist|access to model/i.test(s)) return 'OpenAI API: выбранная модель недоступна для этого API-аккаунта.';
+  if (/Could not download Telegram image/i.test(s)) return 'Не удалось скачать фото из Telegram.';
+  return 'Ошибка обработки фото. Подробность записана в Vercel Logs.';
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(200).json({ ok: true });
 
@@ -87,7 +96,7 @@ export default async function handler(req, res) {
           content: [
             {
               type: 'input_text',
-              text: 'Read the main price or final total in Uzbek soum (UZS) from this image. If there are several numbers, choose the visually prominent payable/total price. Return ONLY the integer amount in UZS using digits with no spaces, separators, currency symbols, or explanation. If no reliable UZS price is visible, return NONE.'
+              text: 'Read the final payable total in Uzbek soum (UZS) from this receipt or price tag. Prefer labels like Итого к оплате, Всего, Jami, Toʻlov, Total. Return ONLY the integer amount in UZS using digits with no spaces, separators, currency symbols, or explanation. If no reliable UZS total is visible, return NONE.'
             },
             {
               type: 'input_image',
@@ -100,7 +109,10 @@ export default async function handler(req, res) {
     });
 
     const aiJson = await aiResp.json();
-    if (!aiResp.ok) throw new Error(`OpenAI error: ${JSON.stringify(aiJson)}`);
+    if (!aiResp.ok) {
+      const detail = aiJson?.error?.message || JSON.stringify(aiJson);
+      throw new Error(`OpenAI ${aiResp.status}: ${detail}`);
+    }
 
     const text = extractOutputText(aiJson).trim();
     const digits = text.replace(/\D/g, '');
@@ -138,14 +150,14 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ ok: true });
   } catch (err) {
-    console.error(err);
+    console.error('PHOTO_PROCESSING_ERROR', err);
     try {
       const chatId = req.body?.message?.chat?.id;
       const tgToken = process.env.TELEGRAM_BOT_TOKEN;
       if (chatId && tgToken) {
         await telegram(tgToken, 'sendMessage', {
           chat_id: chatId,
-          text: 'Произошла ошибка при обработке фото. Попробуй ещё раз через несколько секунд.',
+          text: safeErrorMessage(err),
         });
       }
     } catch (_) {}
