@@ -59,7 +59,7 @@ export default async function handler(req, res) {
     if (message.text === '/start') {
       await telegram(tgToken, 'sendMessage', {
         chat_id: chatId,
-        text: '💱 Валютный калькулятор\n\nОтправь фото ценника или чека — я распознаю сумму в сумах и сразу покажу эквивалент в рублях и долларах.\n\nКалькулятор открывается кнопкой внизу.',
+        text: '💱 Валютный калькулятор\n\nНажмите кнопку «Калькулятор» внизу, чтобы открыть приложение.\n\nВ чат ничего присылать не нужно.',
       });
       return res.status(200).json({ ok: true });
     }
@@ -67,7 +67,7 @@ export default async function handler(req, res) {
     if (!Array.isArray(message.photo) || message.photo.length === 0) {
       await telegram(tgToken, 'sendMessage', {
         chat_id: chatId,
-        text: 'Пришли фото ценника или чека с суммой в UZS 📸',
+        text: 'Нажмите кнопку «Калькулятор» внизу, чтобы открыть приложение.',
       });
       return res.status(200).json({ ok: true });
     }
