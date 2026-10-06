@@ -10,8 +10,13 @@
     html,body{margin:0;padding:0;background:#111;color:#fff;font-family:Arial,sans-serif}
     body{min-height:100vh}
     .app{max-width:900px;margin:0 auto;padding:18px}
-    h1{font-size:26px;margin:0 0 18px}
+    h1{font-size:26px;margin:0 0 14px}
     h2{font-size:20px;margin:0 0 16px}
+    .photo-box{background:#181818;border:1px solid #333;border-radius:18px;padding:14px;margin-bottom:16px}
+    .photo-btn{width:100%;border:0;border-radius:14px;padding:14px 16px;background:#fff;color:#111;font-size:18px;font-weight:700;cursor:pointer}
+    .photo-btn:disabled{opacity:.55;cursor:default}
+    .photo-status{font-size:13px;color:#aaa;margin-top:9px;min-height:18px}
+    .photo-status.ok{color:#9fd6a9}.photo-status.err{color:#ff9c9c}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
     .card{background:#1f1f1f;border-radius:20px;padding:20px;min-width:0}
     label{display:block;font-size:15px;margin-bottom:7px}
@@ -31,9 +36,10 @@
     .extra-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:end}
     .extra-result{background:#222;border-radius:12px;padding:13px 14px;font-size:20px;min-height:48px;display:flex;align-items:center}
     .note{color:#888;font-size:13px;margin:14px 2px 0}
+    #photoInput{display:none}
     @media (max-width:640px){
       .app{padding:12px}
-      h1{font-size:24px;line-height:1.15;margin-bottom:14px}
+      h1{font-size:24px;line-height:1.15;margin-bottom:12px}
       .grid{grid-template-columns:1fr;gap:12px}
       .card{padding:16px;border-radius:16px}
       .rates{grid-template-columns:1fr 1fr;gap:10px}
@@ -54,6 +60,12 @@
 <body>
   <main class="app">
     <h1>💱 Валютный калькулятор</h1>
+
+    <section class="photo-box">
+      <button id="photoBtn" class="photo-btn" type="button">📸 Сфотографировать / выбрать цену</button>
+      <input id="photoInput" type="file" accept="image/*" capture="environment">
+      <div id="photoStatus" class="photo-status">Сфотографируй ценник или чек — сумма подставится автоматически.</div>
+    </section>
 
     <div class="grid">
       <section class="card">
@@ -108,7 +120,7 @@
       </div>
     </section>
 
-    <p class="note">Курсы запоминаются автоматически. Если поменяешь их в полях, при следующем открытии останутся новые значения.</p>
+    <p class="note">Курсы запоминаются автоматически. Фото отправляется только для распознавания суммы.</p>
   </main>
 
   <script>
@@ -121,11 +133,17 @@
     const thousandResult = document.getElementById('thousandResult');
     const effectiveResult = document.getElementById('effectiveResult');
     const usdToUzs = document.getElementById('usdToUzs');
+    const photoBtn = document.getElementById('photoBtn');
+    const photoInput = document.getElementById('photoInput');
+    const photoStatus = document.getElementById('photoStatus');
 
     const savedRub = localStorage.getItem('usdRub');
     const savedUzs = localStorage.getItem('usdUzs');
     if (savedRub) usdRub.value = savedRub;
     if (savedUzs) usdUzs.value = savedUzs;
+
+    const urlAmount = new URLSearchParams(location.search).get('uzs');
+    if (urlAmount && Number(urlAmount) > 0) uzs.value = Number(urlAmount);
 
     function fmt(value, digits = 2) {
       return new Intl.NumberFormat('ru-RU', {
@@ -163,6 +181,50 @@
       effectiveResult.textContent = '1 ₽ = ' + fmt(effective, 2) + ' сум';
       usdToUzs.textContent = fmt(usdAmount * uzsRate, 0) + ' сум';
     }
+
+    async function resizeImage(file) {
+      const bitmap = await createImageBitmap(file);
+      const maxSide = 1600;
+      const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+      const width = Math.max(1, Math.round(bitmap.width * scale));
+      const height = Math.max(1, Math.round(bitmap.height * scale));
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(bitmap, 0, 0, width, height);
+      bitmap.close();
+      return canvas.toDataURL('image/jpeg', 0.82);
+    }
+
+    photoBtn.addEventListener('click', () => photoInput.click());
+    photoInput.addEventListener('change', async () => {
+      const file = photoInput.files?.[0];
+      if (!file) return;
+      photoBtn.disabled = true;
+      photoStatus.className = 'photo-status';
+      photoStatus.textContent = '⏳ Распознаю сумму…';
+      try {
+        const image = await resizeImage(file);
+        const response = await fetch('/api/recognize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.error || 'Ошибка распознавания');
+        uzs.value = data.amount;
+        calculate();
+        photoStatus.className = 'photo-status ok';
+        photoStatus.textContent = '✅ Распознано: ' + fmt(data.amount, 0) + ' сум';
+      } catch (err) {
+        photoStatus.className = 'photo-status err';
+        photoStatus.textContent = '❌ ' + (err.message || 'Не удалось обработать фото');
+      } finally {
+        photoBtn.disabled = false;
+        photoInput.value = '';
+      }
+    });
 
     [uzs, usdRub, usdUzs, usdInput].forEach(el => el.addEventListener('input', calculate));
     calculate();
