@@ -1,86 +1,134 @@
-<meta charset="UTF-8">
-<div style="font-family:Arial,sans-serif;max-width:900px;margin:0 auto;padding:24px;background:#111;color:#fff;min-height:100vh;">
-  <h2 style="margin-top:0;">💱 Валютный калькулятор</h2>
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <title>Валютный калькулятор</title>
+  <style>
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:#111;color:#fff;font-family:Arial,sans-serif}
+    body{min-height:100vh}
+    .app{max-width:900px;margin:0 auto;padding:18px}
+    h1{font-size:26px;margin:0 0 18px}
+    h2{font-size:20px;margin:0 0 16px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    .card{background:#1f1f1f;border-radius:20px;padding:20px;min-width:0}
+    label{display:block;font-size:15px;margin-bottom:7px}
+    input{width:100%;border:1px solid #444;border-radius:12px;background:#222;color:#fff;padding:12px 14px;font-size:18px;outline:none}
+    input:focus{border-color:#777}
+    .main-input{font-size:26px;padding:15px 16px;margin-bottom:18px}
+    .rates{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .result-title{color:#bbb;font-size:15px}
+    .big-result{font-size:38px;font-weight:700;margin:10px 0 20px;word-break:break-word}
+    .mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .mini{border:1px solid #444;border-radius:14px;padding:14px;min-width:0}
+    .mini-label{color:#bbb;font-size:14px}
+    .mini-value{font-size:22px;font-weight:700;margin-top:8px;word-break:break-word}
+    .effective{border:1px solid #444;border-radius:14px;padding:14px;margin-top:12px}
+    .effective-value{font-size:19px;font-weight:700;margin-top:8px}
+    .extra{margin-top:18px}
+    .extra-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:end}
+    .extra-result{background:#222;border-radius:12px;padding:13px 14px;font-size:20px;min-height:48px;display:flex;align-items:center}
+    .note{color:#888;font-size:13px;margin:14px 2px 0}
+    @media (max-width:640px){
+      .app{padding:12px}
+      h1{font-size:24px;line-height:1.15;margin-bottom:14px}
+      .grid{grid-template-columns:1fr;gap:12px}
+      .card{padding:16px;border-radius:16px}
+      .rates{grid-template-columns:1fr 1fr;gap:10px}
+      .mini-grid{grid-template-columns:1fr 1fr;gap:10px}
+      .big-result{font-size:34px}
+      .extra{margin-top:12px}
+      .extra-grid{grid-template-columns:1fr;gap:10px}
+      input{font-size:17px}
+      .main-input{font-size:24px}
+    }
+    @media (max-width:390px){
+      .rates{grid-template-columns:1fr}
+      .mini-grid{grid-template-columns:1fr}
+      .big-result{font-size:31px}
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <h1>💱 Валютный калькулятор</h1>
 
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-    <div style="background:#1f1f1f;padding:20px;border-radius:20px;">
-      <label>Сумма в узбекских сумах</label>
-      <input id="uzs" type="number" value="455000"
-        style="width:100%;box-sizing:border-box;margin:10px 0 18px;padding:14px;font-size:24px;border-radius:14px;border:1px solid #444;background:#222;color:#fff;">
+    <div class="grid">
+      <section class="card">
+        <label for="uzs">Сумма в узбекских сумах</label>
+        <input id="uzs" class="main-input" type="number" inputmode="decimal" value="455000">
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div class="rates">
+          <div>
+            <label for="usdRub">Покупка $ за ₽</label>
+            <input id="usdRub" type="number" inputmode="decimal" step="0.01" value="86.5">
+          </div>
+          <div>
+            <label for="usdUzs">Обмен $ → сум</label>
+            <input id="usdUzs" type="number" inputmode="decimal" step="1" value="11770">
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="result-title">Стоимость покупки наличными</div>
+        <div id="rubResult" class="big-result">—</div>
+
+        <div class="mini-grid">
+          <div class="mini">
+            <div class="mini-label">Нужно долларов</div>
+            <div id="usdResult" class="mini-value">—</div>
+          </div>
+          <div class="mini">
+            <div class="mini-label">1 000 сум</div>
+            <div id="thousandResult" class="mini-value">—</div>
+          </div>
+        </div>
+
+        <div class="effective">
+          <div class="mini-label">Эффективный курс</div>
+          <div id="effectiveResult" class="effective-value">—</div>
+        </div>
+      </section>
+    </div>
+
+    <section class="card extra">
+      <h2>Дополнительный перевод</h2>
+      <div class="extra-grid">
         <div>
-          <label>Покупка $ за ₽</label>
-          <input id="usdRub" type="number" step="0.01" value="86.5"
-            style="width:100%;box-sizing:border-box;margin-top:8px;padding:12px;font-size:18px;border-radius:12px;border:1px solid #444;background:#222;color:#fff;">
+          <label for="usdInput">Доллары → сум</label>
+          <input id="usdInput" type="number" inputmode="decimal" value="100">
         </div>
-
         <div>
-          <label>Обмен $ → сум</label>
-          <input id="usdUzs" type="number" step="1" value="11770"
-            style="width:100%;box-sizing:border-box;margin-top:8px;padding:12px;font-size:18px;border-radius:12px;border:1px solid #444;background:#222;color:#fff;">
+          <label>Результат</label>
+          <div id="usdToUzs" class="extra-result">—</div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <div style="background:#1f1f1f;padding:20px;border-radius:20px;">
-      <div style="color:#bbb;">Стоимость покупки наличными</div>
-      <div id="rubResult" style="font-size:38px;font-weight:bold;margin:12px 0 22px;">—</div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-        <div style="border:1px solid #444;padding:14px;border-radius:14px;">
-          <div style="color:#bbb;">Нужно долларов</div>
-          <div id="usdResult" style="font-size:22px;font-weight:bold;margin-top:8px;">—</div>
-        </div>
-
-        <div style="border:1px solid #444;padding:14px;border-radius:14px;">
-          <div style="color:#bbb;">1 000 сум</div>
-          <div id="thousandResult" style="font-size:22px;font-weight:bold;margin-top:8px;">—</div>
-        </div>
-      </div>
-
-      <div style="border:1px solid #444;padding:14px;border-radius:14px;margin-top:14px;">
-        <div style="color:#bbb;">Эффективный курс</div>
-        <div id="effectiveResult" style="font-size:20px;font-weight:bold;margin-top:8px;">—</div>
-      </div>
-    </div>
-  </div>
-
-  <div style="margin-top:20px;background:#1f1f1f;padding:20px;border-radius:20px;">
-    <h3 style="margin-top:0;">Дополнительный перевод</h3>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-      <div>
-        <label>Доллары → сум</label>
-        <input id="usdInput" type="number" value="100"
-          style="width:100%;box-sizing:border-box;margin-top:8px;padding:12px;font-size:18px;border-radius:12px;border:1px solid #444;background:#222;color:#fff;">
-      </div>
-
-      <div>
-        <label>Результат</label>
-        <div id="usdToUzs" style="margin-top:8px;padding:14px;background:#222;border-radius:12px;font-size:20px;">—</div>
-      </div>
-    </div>
-  </div>
-
-  <p style="color:#888;margin-top:18px;">
-    Курсы можно менять прямо в полях.
-  </p>
+    <p class="note">Курсы запоминаются автоматически. Если поменяешь их в полях, при следующем открытии останутся новые значения.</p>
+  </main>
 
   <script>
-    const uzs = document.getElementById("uzs");
-    const usdRub = document.getElementById("usdRub");
-    const usdUzs = document.getElementById("usdUzs");
-    const usdInput = document.getElementById("usdInput");
+    const uzs = document.getElementById('uzs');
+    const usdRub = document.getElementById('usdRub');
+    const usdUzs = document.getElementById('usdUzs');
+    const usdInput = document.getElementById('usdInput');
+    const rubResult = document.getElementById('rubResult');
+    const usdResult = document.getElementById('usdResult');
+    const thousandResult = document.getElementById('thousandResult');
+    const effectiveResult = document.getElementById('effectiveResult');
+    const usdToUzs = document.getElementById('usdToUzs');
 
-    const rubResult = document.getElementById("rubResult");
-    const usdResult = document.getElementById("usdResult");
-    const thousandResult = document.getElementById("thousandResult");
-    const effectiveResult = document.getElementById("effectiveResult");
-    const usdToUzs = document.getElementById("usdToUzs");
+    const savedRub = localStorage.getItem('usdRub');
+    const savedUzs = localStorage.getItem('usdUzs');
+    if (savedRub) usdRub.value = savedRub;
+    if (savedUzs) usdUzs.value = savedUzs;
 
     function fmt(value, digits = 2) {
-      return new Intl.NumberFormat("ru-RU", {
+      return new Intl.NumberFormat('ru-RU', {
         minimumFractionDigits: digits,
         maximumFractionDigits: digits
       }).format(value);
@@ -92,25 +140,32 @@
       const uzsRate = Number(usdUzs.value) || 0;
       const usdAmount = Number(usdInput.value) || 0;
 
-      if (rubRate <= 0 || uzsRate <= 0) return;
+      if (rubRate <= 0 || uzsRate <= 0) {
+        rubResult.textContent = '—';
+        usdResult.textContent = '—';
+        thousandResult.textContent = '—';
+        effectiveResult.textContent = '—';
+        usdToUzs.textContent = '—';
+        return;
+      }
+
+      localStorage.setItem('usdRub', usdRub.value);
+      localStorage.setItem('usdUzs', usdUzs.value);
 
       const neededUsd = uzsAmount / uzsRate;
       const rubCost = neededUsd * rubRate;
       const thousandRub = (1000 / uzsRate) * rubRate;
       const effective = uzsRate / rubRate;
 
-      rubResult.textContent = fmt(rubCost, 2) + " ₽";
-      usdResult.textContent = "$" + fmt(neededUsd, 2);
-      thousandResult.textContent = fmt(thousandRub, 2) + " ₽";
-      effectiveResult.textContent = "1 ₽ = " + fmt(effective, 2) + " сум";
-
-      usdToUzs.textContent = fmt(usdAmount * uzsRate, 0) + " сум";
+      rubResult.textContent = fmt(rubCost, 2) + ' ₽';
+      usdResult.textContent = '$' + fmt(neededUsd, 2);
+      thousandResult.textContent = fmt(thousandRub, 2) + ' ₽';
+      effectiveResult.textContent = '1 ₽ = ' + fmt(effective, 2) + ' сум';
+      usdToUzs.textContent = fmt(usdAmount * uzsRate, 0) + ' сум';
     }
 
-    [uzs, usdRub, usdUzs, usdInput].forEach(el => {
-      el.addEventListener("input", calculate);
-    });
-
+    [uzs, usdRub, usdUzs, usdInput].forEach(el => el.addEventListener('input', calculate));
     calculate();
   </script>
-</div>
+</body>
+</html>
