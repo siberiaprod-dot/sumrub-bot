@@ -126,18 +126,11 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
-    const USD_RUB = 86.5;
-    const USD_UZS = 11770;
-    const usd = amount / USD_UZS;
-    const rub = usd * USD_RUB;
-
     await telegram(tgToken, 'sendMessage', {
       chat_id: chatId,
       text:
         `📸 Распознал: ${fmt(amount, 0)} сум\n\n` +
-        `🇷🇺 ≈ ${fmt(rub, 2)} ₽\n` +
-        `🇺🇸 ≈ $${fmt(usd, 2)}\n\n` +
-        `Курс расчёта: $1 = ${fmt(USD_RUB, 2)} ₽ → ${fmt(USD_UZS, 0)} сум`,
+        'Открой калькулятор, чтобы пересчитать по своим курсам. Проверь курсы в разделе «Мои курсы».',
       reply_markup: {
         inline_keyboard: [[
           {
